@@ -7,13 +7,25 @@
 }
 
 .myuste-panel-card {
-  width: 360px;
+  width: 380px;
   background: #ffffff;
-  border: 2px solid #f0c419;
+  border: 2px solid #d8d8d8;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.18);
   padding: 14px;
   color: #222;
+}
+
+.myuste-panel-card.theme-red {
+  border-color: #c62828;
+}
+
+.myuste-panel-card.theme-green {
+  border-color: #2e7d32;
+}
+
+.myuste-panel-card.theme-gold {
+  border-color: #c9a227;
 }
 
 .myuste-panel-title {
@@ -23,9 +35,71 @@
   color: #7a3d00;
 }
 
+.myuste-status-box {
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+}
+
+.myuste-status-box.theme-red {
+  background: #fde8e8;
+  border-color: #ef9a9a;
+  color: #7f1d1d;
+}
+
+.myuste-status-box.theme-green {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+  color: #1b5e20;
+}
+
+.myuste-status-box.theme-gold {
+  background: #fff8e1;
+  border-color: #e6c86e;
+  color: #8d6e00;
+}
+
+.myuste-status-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.myuste-status-body {
+  line-height: 1.4;
+  font-size: 13px;
+}
+
 .myuste-panel-row {
   margin: 8px 0;
   line-height: 1.35;
+}
+
+.myuste-tier-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.myuste-tier-badge.theme-red {
+  background: #fde8e8;
+  color: #b00020;
+}
+
+.myuste-tier-badge.theme-green {
+  background: #e8f5e9;
+  color: #0a7f3f;
+}
+
+.myuste-tier-badge.theme-gold {
+  background: #fff3c4;
+  color: #9c7400;
+}
+
+.myuste-tier-badge.theme-neutral {
+  background: #efefef;
+  color: #555;
 }
 
 .myuste-btn {
@@ -61,4 +135,73 @@
 .myuste-highlight {
   font-weight: 700;
   color: #7a3d00;
+}
+
+
+.myuste-source-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.myuste-source-badge.source-official {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.myuste-source-badge.source-fallback {
+  background: #fff3e0;
+  color: #8a4b00;
+}
+
+
+.myuste-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.myuste-icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  background: #fff;
+  color: #555;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.myuste-icon-btn:hover {
+  background: #f6f6f6;
+}
+
+.myuste-reopen-btn {
+  border: 0;
+  border-radius: 999px;
+  background: #7a3d00;
+  color: #fff;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+
+.myuste-reopen-btn:hover {
+  filter: brightness(0.96);
+}
+
+
+.myuste-panel-header {
+  cursor: move;
+  user-select: none;
+}
+
+.myuste-panel-title {
+  cursor: move;
 }

@@ -90,3 +90,8 @@ button {
   border: 1px solid #d5d5d5;
   border-radius: 8px;
 }
+
+.gold {
+  color: #9c7400;
+  font-weight: 700;
+}

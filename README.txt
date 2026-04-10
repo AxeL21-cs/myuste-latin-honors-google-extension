@@ -16,3 +16,15 @@ Important:
 - This is an unofficial estimate.
 - It depends on the visible page structure and the terms the student saved.
 - If UST uses additional eligibility rules, those are not included here.
+- Currently, the computation is based off the final semestral average at the bottom of the course site.
+- This was trained to recognize the layout of the grades portal during 2026. If the layout was updated, it might not work as intended.
+
+How to use:
+How to install:
+
+1. Download and unzip the file.
+2. Open chrome://extensions/
+3. Turn on Developer mode
+4. Click Load unpacked
+5. Select the unzipped folder
+6. Open the myUSTe Grades page

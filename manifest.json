@@ -1,19 +1,31 @@
 {
   "manifest_version": 3,
   "name": "myUSTe Latin Honors Tracker",
-  "version": "1.0.0",
-  "description": "Calculates current term and cumulative GWA from the myUSTe grades page and checks Latin honors eligibility.",
-  "permissions": ["storage", "activeTab", "scripting"],
-  "host_permissions": ["<all_urls>"],
+  "version": "1.0.2",
+  "description": "Uses myUSTe Semestral Ave first, then falls back to row-based estimation for Latin honors tracking.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_title": "myUSTe Latin Honors Tracker",
     "default_popup": "popup.html"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["content.css"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
       "run_at": "document_idle"
     }
   ]

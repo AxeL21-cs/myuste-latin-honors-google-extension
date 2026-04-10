@@ -1,15 +1,15 @@
 const HONORS = [
-  { key: 'summa', label: 'Summa Cum Laude', min: 1.0, max: 1.2 },
-  { key: 'magna', label: 'Magna Cum Laude', min: 1.201, max: 1.45 },
-  { key: 'cum', label: 'Cum Laude', min: 1.451, max: 1.75 }
+  { key: 'summa', label: 'Summa Cum Laude', min: 1.0, max: 1.2, className: 'gold' },
+  { key: 'magna', label: 'Magna Cum Laude', min: 1.201, max: 1.45, className: 'good' },
+  { key: 'cum', label: 'Cum Laude', min: 1.451, max: 1.75, className: 'good' }
 ];
 
 function getHonorTier(gwa) {
   if (!Number.isFinite(gwa)) return { label: 'Unavailable', className: '' };
   for (const honor of HONORS) {
-    if (gwa >= honor.min && gwa <= honor.max) return { ...honor, className: honor.key === 'cum' ? 'warn' : 'good' };
+    if (gwa >= honor.min && gwa <= honor.max) return honor;
   }
-  return { label: 'Not on Latin honors track', className: 'bad', key: 'none' };
+  return { label: 'Not yet eligible for Latin honors', className: 'bad', key: 'none' };
 }
 
 function getNextBetterTier(gwa) {
@@ -51,6 +51,7 @@ function renderSavedTermsTable(savedTerms) {
         <td>${escapeHtml(term.term)}</td>
         <td>${Number(term.totalUnits || 0).toFixed(0)}</td>
         <td>${Number(term.gwa || 0).toFixed(3)}</td>
+        <td>${escapeHtml(term.source || 'Unknown')}</td>
       </tr>
     `)
     .join('');
@@ -63,6 +64,7 @@ function renderSavedTermsTable(savedTerms) {
             <th>Term</th>
             <th>Units</th>
             <th>GWA</th>
+            <th>Source</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -81,11 +83,20 @@ function buildGuidance(totalWeighted, totalUnits, futureUnits, currentGwa) {
     const needed = computeRequiredAverage(totalWeighted, totalUnits, futureUnits, nextTier.max);
     if (needed !== null) {
       if (needed < 1.0) {
-        detail = `You only need to avoid slipping. Even a 1.000 average over the next ${futureUnits} unit(s) keeps ${nextTier.label} in reach.`;
+        detail = `Stay disciplined. Keeping your average near 1.000 over the next ${futureUnits} unit(s) keeps ${nextTier.label} in reach.`;
       } else if (needed > 5.0) {
         detail = `A higher tier is not realistic with only ${futureUnits} future unit(s). Required average: ${needed.toFixed(3)}.`;
       } else {
         detail = `To reach ${nextTier.label}, you need about a ${needed.toFixed(3)} average over the next ${futureUnits} unit(s).`;
+      }
+    }
+  } else if (highestNow === 'None yet') {
+    const neededCum = computeRequiredAverage(totalWeighted, totalUnits, futureUnits, HONORS[2].max);
+    if (neededCum !== null) {
+      if (neededCum > 5.0) {
+        detail = `With only ${futureUnits} future unit(s), reaching Cum Laude is not realistic yet.`;
+      } else {
+        detail = `To enter Cum Laude range, you need about a ${neededCum.toFixed(3)} average over the next ${futureUnits} unit(s).`;
       }
     }
   }
@@ -104,7 +115,8 @@ async function load() {
     latestBox.innerHTML = `
       <div><strong>${escapeHtml(latest.term)}</strong></div>
       <div>GWA: ${latest.gwa.toFixed(3)}</div>
-      <div>Total Units: ${latest.totalUnits}</div>
+      <div>Total Units: ${latest.totalUnits || 'N/A'}</div>
+      <div>Source: ${escapeHtml(latest.source || 'Unknown')}</div>
       <div class="${tier.className}">${tier.label}</div>
     `;
   } else {
@@ -139,8 +151,11 @@ async function load() {
   } else {
     cumulativeBox.innerHTML = 'No saved terms yet.';
   }
+}
 
+function wireEvents() {
   document.getElementById('savePlannerBtn').addEventListener('click', async () => {
+    const futureUnitsInput = document.getElementById('futureUnits');
     const value = Number(futureUnitsInput.value);
     if (!Number.isFinite(value) || value <= 0) {
       document.getElementById('plannerNote').textContent = 'Enter a valid number of future units.';
@@ -157,4 +172,5 @@ async function load() {
   });
 }
 
+wireEvents();
 load();
