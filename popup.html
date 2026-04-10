@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>myUSTe Latin Honors Tracker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="wrap">
+    <h1>myUSTe Latin Honors Tracker</h1>
+    <div class="card">
+      <div class="section-title">Current visible term</div>
+      <div id="latest">Open the myUSTe Grades page to load data.</div>
+    </div>
+    <div class="card">
+      <div class="section-title">Latin honors projection</div>
+      <div class="planner-row">
+        <label for="futureUnits">Future units to project</label>
+        <div class="planner-controls">
+          <input id="futureUnits" type="number" min="1" step="1">
+          <button id="savePlannerBtn" class="secondary-btn">Update</button>
+        </div>
+        <div id="plannerNote" class="small">Use this to estimate what average you need for a higher tier.</div>
+      </div>
+      <div id="cumulative">No saved terms yet.</div>
+    </div>
+    <div class="card">
+      <div class="section-title">Saved terms</div>
+      <div id="terms"></div>
+      <button id="clearBtn">Clear saved terms</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

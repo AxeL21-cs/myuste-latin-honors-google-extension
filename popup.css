@@ -1,0 +1,92 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f8f8f8;
+  color: #222;
+}
+.wrap {
+  width: 390px;
+  padding: 14px;
+}
+h1 {
+  font-size: 18px;
+  margin: 0 0 12px;
+  color: #7a3d00;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e7c75b;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+button {
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #f0c419;
+  font-weight: 700;
+  cursor: pointer;
+}
+.secondary-btn {
+  width: auto;
+  min-width: 88px;
+}
+.small {
+  font-size: 12px;
+  color: #666;
+}
+.good {
+  color: #0a7f3f;
+  font-weight: 700;
+}
+.warn {
+  color: #b26a00;
+  font-weight: 700;
+}
+.bad {
+  color: #b00020;
+  font-weight: 700;
+}
+.table-wrap {
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+.terms-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.terms-table th,
+.terms-table td {
+  border: 1px solid #ecd788;
+  padding: 8px;
+  text-align: left;
+}
+.terms-table th {
+  background: #fff6d8;
+}
+.planner-row {
+  margin-bottom: 12px;
+}
+.planner-row label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.planner-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.planner-controls input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #d5d5d5;
+  border-radius: 8px;
+}

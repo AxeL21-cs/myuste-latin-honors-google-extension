@@ -1,0 +1,64 @@
+#myuste-latin-honors-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 999999;
+  font-family: Arial, sans-serif;
+}
+
+.myuste-panel-card {
+  width: 360px;
+  background: #ffffff;
+  border: 2px solid #f0c419;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  padding: 14px;
+  color: #222;
+}
+
+.myuste-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #7a3d00;
+}
+
+.myuste-panel-row {
+  margin: 8px 0;
+  line-height: 1.35;
+}
+
+.myuste-btn {
+  margin-top: 10px;
+  width: 100%;
+  background: #f0c419;
+  color: #222;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.myuste-btn:hover {
+  filter: brightness(0.96);
+}
+
+.myuste-btn.is-disabled,
+.myuste-btn:disabled {
+  background: #d9d9d9;
+  color: #555;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.myuste-panel-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #555;
+}
+
+.myuste-highlight {
+  font-weight: 700;
+  color: #7a3d00;
+}
