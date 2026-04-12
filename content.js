@@ -5,9 +5,10 @@
     { key: 'magna', label: 'Magna Cum Laude', min: 1.201, max: 1.45, theme: 'green' },
     { key: 'cum', label: 'Cum Laude', min: 1.451, max: 1.75, theme: 'green' }
   ];
-
+  const TOTAL_TERMS = 8;
 
   const DISMISSED_KEY = 'myusteTrackerDismissed';
+  const HIDDEN_KEY = 'myusteTrackerFullyHidden';
 
   function isDismissed() {
     return sessionStorage.getItem(DISMISSED_KEY) === '1';
@@ -16,6 +17,15 @@
   function setDismissed(value) {
     if (value) sessionStorage.setItem(DISMISSED_KEY, '1');
     else sessionStorage.removeItem(DISMISSED_KEY);
+  }
+
+  function isFullyHidden() {
+    return sessionStorage.getItem(HIDDEN_KEY) === '1';
+  }
+
+  function setFullyHidden(value) {
+    if (value) sessionStorage.setItem(HIDDEN_KEY, '1');
+    else sessionStorage.removeItem(HIDDEN_KEY);
   }
 
   const POSITION_KEY = 'myusteTrackerPosition';
@@ -64,106 +74,6 @@
     if (gwa > 1.45) return HONORS[1];
     if (gwa > 1.2) return HONORS[0];
     return null;
-  }
-
-  function getHighestMaintainableTier(gwa) {
-    const current = getHonorTier(gwa);
-    if (current.key !== 'none' && current.key !== 'na') return current;
-    return null;
-  }
-
-  function computeRequiredAverage(currentWeightedSum, currentUnits, futureUnits, targetMaxGwa) {
-    if (!Number.isFinite(currentWeightedSum) || !Number.isFinite(currentUnits) || !Number.isFinite(futureUnits) || futureUnits <= 0) {
-      return null;
-    }
-    return ((targetMaxGwa * (currentUnits + futureUnits)) - currentWeightedSum) / futureUnits;
-  }
-
-  function getMessageSet(gwa, projection) {
-    const tier = getHonorTier(gwa);
-    if (tier.key === 'summa') {
-      return {
-        theme: 'gold',
-        title: 'You are on Summa track.',
-        body: 'Excellent work. Stay consistent, protect your strongest habits, and do not get careless this close to the top.'
-      };
-    }
-    if (tier.key === 'magna' || tier.key === 'cum') {
-      return {
-        theme: 'green',
-        title: `You are currently on ${tier.label} track.`,
-        body: projection.nextTier
-          ? `Strong position. Keep pushing. ${projection.guidance}`
-          : 'Strong position. Keep pushing and protect your consistency every term.'
-      };
-    }
-    return {
-      theme: 'red',
-      title: 'You are not yet in Latin honors range.',
-      body: projection.nextTier
-        ? `Do not write yourself off. ${projection.guidance}`
-        : 'Do not write yourself off. One strong term will not fix everything, but disciplined improvement every term can still move you into range.'
-    };
-  }
-
-  function buildProjection(data, savedTerms, futureUnits) {
-    const currentTermIndex = savedTerms.findIndex(t => t.term === data.term);
-    let totalWeighted = 0;
-    let totalUnits = 0;
-
-    if (savedTerms.length) {
-      savedTerms.forEach((term, idx) => {
-        if (idx === currentTermIndex) {
-          totalWeighted += Number(data.weightedSum) || 0;
-          totalUnits += Number(data.totalUnits) || 0;
-        } else {
-          totalWeighted += Number(term.weightedSum) || 0;
-          totalUnits += Number(term.totalUnits) || 0;
-        }
-      });
-      if (currentTermIndex === -1) {
-        totalWeighted += Number(data.weightedSum) || 0;
-        totalUnits += Number(data.totalUnits) || 0;
-      }
-    } else {
-      totalWeighted = Number(data.weightedSum) || 0;
-      totalUnits = Number(data.totalUnits) || 0;
-    }
-
-    const cumulativeGwa = totalUnits > 0 ? totalWeighted / totalUnits : NaN;
-    const maintainable = getHighestMaintainableTier(cumulativeGwa);
-    const nextTier = getNextBetterTier(cumulativeGwa);
-    let guidance = 'You are already at the highest Latin honors tier.';
-
-    if (nextTier) {
-      const needed = computeRequiredAverage(totalWeighted, totalUnits, futureUnits, nextTier.max);
-      if (needed !== null) {
-        if (needed < 1.0) {
-          guidance = `To keep ${nextTier.label} within reach, stay as close to 1.000 as possible over the next ${futureUnits} unit(s).`;
-        } else if (needed > 5.0) {
-          guidance = `A jump to ${nextTier.label} is not realistic with only ${futureUnits} future unit(s). You would need about ${needed.toFixed(3)}, which is beyond the normal grading scale.`;
-        } else {
-          guidance = `To reach ${nextTier.label}, you need about a ${needed.toFixed(3)} average across the next ${futureUnits} unit(s).`;
-        }
-      }
-    } else if (!maintainable) {
-      const neededCum = computeRequiredAverage(totalWeighted, totalUnits, futureUnits, HONORS[2].max);
-      if (neededCum !== null) {
-        if (neededCum > 5.0) {
-          guidance = `With only ${futureUnits} future unit(s), reaching Cum Laude is not realistic yet. You need a bigger runway or stronger earlier terms.`;
-        } else {
-          guidance = `To enter Cum Laude range, you need about a ${neededCum.toFixed(3)} average across the next ${futureUnits} unit(s).`;
-        }
-      }
-    }
-
-    return {
-      cumulativeGwa,
-      maintainable,
-      nextTier,
-      guidance,
-      futureUnits
-    };
   }
 
   function normalizeText(text) {
@@ -304,15 +214,123 @@
     };
   }
 
-  async function getSavedState(term, gwa, totalUnits) {
-    const data = await chrome.storage.local.get(['savedTerms', 'plannerFutureUnits']);
+  function mergeTermRecords(savedTerms, currentTerm) {
+    const map = new Map();
+    for (const term of (Array.isArray(savedTerms) ? savedTerms : [])) {
+      if (!term || !term.term || !Number.isFinite(Number(term.gwa))) continue;
+      map.set(term.term, { ...term, gwa: Number(term.gwa) });
+    }
+    if (currentTerm && currentTerm.term && Number.isFinite(currentTerm.gwa)) {
+      map.set(currentTerm.term, {
+        term: currentTerm.term,
+        gwa: Number(currentTerm.gwa),
+        source: currentTerm.source || 'Unknown'
+      });
+    }
+    return Array.from(map.values());
+  }
+
+  function buildProgressSnapshot(savedTerms, currentTerm) {
+    const merged = mergeTermRecords(savedTerms, currentTerm);
+    const completedTerms = merged.length;
+    const remainingTerms = Math.max(TOTAL_TERMS - completedTerms, 0);
+    const gwaValues = merged.map(t => Number(t.gwa)).filter(Number.isFinite);
+    const totalSoFar = gwaValues.reduce((sum, value) => sum + value, 0);
+    const cumulativeGwa = completedTerms ? totalSoFar / completedTerms : NaN;
+    return { merged, completedTerms, remainingTerms, totalSoFar, cumulativeGwa };
+  }
+
+  function getTargetGradePlan(cumulativeGwa, completedTerms, remainingTerms) {
+    const currentTier = getHonorTier(cumulativeGwa);
+    const nextTier = getNextBetterTier(cumulativeGwa);
+
+    if (!Number.isFinite(cumulativeGwa) || completedTerms <= 0) {
+      return {
+        nextTier: null,
+        targetGrade: NaN,
+        isPossible: false,
+        guidance: 'Save more terms first so the tracker can estimate your next-tier target more accurately 🌷'
+      };
+    }
+
+    if (!nextTier) {
+      return {
+        nextTier: null,
+        targetGrade: 1.2,
+        isPossible: true,
+        guidance: 'You are already in Summa Cum Laude range. Keep every remaining term as close to 1.000 as you can and protect that momentum ✨'
+      };
+    }
+
+    if (remainingTerms <= 0) {
+      return {
+        nextTier,
+        targetGrade: NaN,
+        isPossible: false,
+        guidance: `There are no remaining semesters in the 8-term estimate, so ${nextTier.label} can no longer be reached through future terms alone.`
+      };
+    }
+
+    const requiredAverage = ((nextTier.max * TOTAL_TERMS) - (cumulativeGwa * completedTerms)) / remainingTerms;
+    const roundedRequired = Math.round(requiredAverage * 1000) / 1000;
+
+    if (roundedRequired < 1.0) {
+      return {
+        nextTier,
+        targetGrade: 1.0,
+        isPossible: false,
+        guidance: `Even getting 1.000 in each of the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} would still not be enough to reach ${nextTier.label}. Focus on finishing as strongly as you can 💛`
+      };
+    }
+
+    return {
+      nextTier,
+      targetGrade: roundedRequired,
+      isPossible: true,
+      guidance: `To reach ${nextTier.label}, aim for about ${roundedRequired.toFixed(3)} or better in each of the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'}, then maintain that pace 🌱`
+    };
+  }
+
+  function getMessageSet(cumulativeGwa, plan, remainingTerms) {
+    const tier = getHonorTier(cumulativeGwa);
+    const semesterLine = remainingTerms > 0
+      ? `You still have ${remainingTerms} more semester${remainingTerms === 1 ? '' : 's'} to catch up. You can do it! 💪🌸`
+      : 'You have already reached the last estimated semester in the tracker 🌼';
+
+    if (tier.key === 'summa') {
+      return {
+        theme: 'gold',
+        title: '🌟 You are on Summa track.',
+        body: `${semesterLine} You are doing beautifully. Keep your rhythm steady, stay gentle with yourself, and protect the habits that got you here ✨`
+      };
+    }
+    if (tier.key === 'magna') {
+      return {
+        theme: 'green',
+        title: '💚 You are currently on Magna Cum Laude track.',
+        body: `${semesterLine} You are in a really strong spot. ${plan.isPossible ? `Aim for around ${plan.targetGrade.toFixed(3)} or better per remaining semester to push for Summa 🌱` : 'Keep finishing strong and be proud of how far you have already come 🌱'}`
+      };
+    }
+    if (tier.key === 'cum') {
+      return {
+        theme: 'green',
+        title: '🍀 You are currently on Cum Laude track.',
+        body: `${semesterLine} That is already something to be proud of. ${plan.isPossible ? `If you can stay near ${plan.targetGrade.toFixed(3)} or better per remaining semester, you still have a real shot at the next tier 🌷` : 'Keep the momentum going and finish your remaining terms as strongly as you can 🌷'}`
+      };
+    }
+    return {
+      theme: 'red',
+      title: '🌸 Not yet in Latin honors range—but keep going.',
+      body: `${semesterLine} Small improvements still count, and each good term helps more than you think 💗 ${plan.isPossible ? `Aiming for around ${plan.targetGrade.toFixed(3)} or better per remaining semester can still move you toward the next tier.` : 'Even if the next tier is very hard from here, a stronger finish is still worth chasing.'}`
+    };
+  }
+
+  async function getSavedState(term, gwa) {
+    const data = await chrome.storage.local.get(['savedTerms']);
     const savedTerms = Array.isArray(data.savedTerms) ? data.savedTerms : [];
     const existing = savedTerms.find(t => t.term === term);
-    const sameSnapshot = !!existing && nearlyEqual(Number(existing.gwa), Number(gwa)) && Number(existing.totalUnits || 0) === Number(totalUnits || 0);
-    const futureUnits = Number.isFinite(Number(data.plannerFutureUnits)) && Number(data.plannerFutureUnits) > 0
-      ? Number(data.plannerFutureUnits)
-      : (totalUnits || 20);
-    return { savedTerms, existing, sameSnapshot, futureUnits };
+    const sameSnapshot = !!existing && nearlyEqual(Number(existing.gwa), Number(gwa));
+    return { savedTerms, existing, sameSnapshot };
   }
 
   async function saveTerm(data, button) {
@@ -410,9 +428,17 @@
       document.body.appendChild(panel);
     }
 
+    if (isFullyHidden()) {
+      panel.innerHTML = '';
+      return;
+    }
+
     if (isDismissed()) {
       panel.innerHTML = `
-        <button id="myuste-reopen-btn" class="myuste-reopen-btn" title="Show Latin Honors Tracker">Show Tracker</button>
+        <div class="myuste-reopen-wrap">
+          <button id="myuste-reopen-btn" class="myuste-reopen-btn" title="Show Latin Honors Tracker">Show Tracker</button>
+          <button id="myuste-hide-btn" class="myuste-mini-close-btn" title="Hide tracker completely" aria-label="Hide tracker completely">×</button>
+        </div>
       `;
       panel.style.left = '';
       panel.style.top = '';
@@ -422,21 +448,35 @@
       if (reopenBtn) {
         reopenBtn.addEventListener('click', () => {
           setDismissed(false);
+          setFullyHidden(false);
           renderPanel(data);
+        });
+      }
+      const hideBtn = panel.querySelector('#myuste-hide-btn');
+      if (hideBtn) {
+        hideBtn.addEventListener('click', () => {
+          setFullyHidden(true);
+          panel.innerHTML = '';
         });
       }
       return;
     }
 
-    const { savedTerms, sameSnapshot, futureUnits } = await getSavedState(data.term, data.gwa, data.totalUnits);
-    const tier = getHonorTier(data.gwa);
-    const projection = buildProjection(data, savedTerms, futureUnits);
-    const message = getMessageSet(projection.cumulativeGwa, projection);
+    const { savedTerms, sameSnapshot } = await getSavedState(data.term, data.gwa);
+    const progress = buildProgressSnapshot(savedTerms, data);
+    const cumulativeTier = getHonorTier(progress.cumulativeGwa);
+    const plan = getTargetGradePlan(progress.cumulativeGwa, progress.completedTerms, progress.remainingTerms);
+    const message = getMessageSet(progress.cumulativeGwa, plan, progress.remainingTerms);
     const gwaText = Number.isFinite(data.gwa) ? data.gwa.toFixed(3) : 'N/A';
-    const maintainableText = projection.maintainable ? projection.maintainable.label : 'None yet';
+    const cumulativeText = Number.isFinite(progress.cumulativeGwa) ? progress.cumulativeGwa.toFixed(3) : 'N/A';
     const sourceDetail = data.source === 'Portal Semestral Ave'
       ? 'Using the term average already shown by myUSTe.'
       : 'Portal term average was not found, so this is a fallback estimate from visible subject rows.';
+    const targetText = plan.nextTier
+      ? (plan.isPossible
+        ? `${plan.targetGrade.toFixed(3)} or better per remaining semester`
+        : `${plan.nextTier.label} is no longer reachable in the remaining estimated semesters`)
+      : 'Maintain 1.200 or better to protect Summa range';
 
     panel.innerHTML = `
       <div class="myuste-panel-card theme-${message.theme}">
@@ -450,13 +490,14 @@
         </div>
         <div class="myuste-panel-row"><strong>Term:</strong> <span>${data.term}</span></div>
         <div class="myuste-panel-row"><strong>Term GWA:</strong> <span>${gwaText}</span></div>
+        <div class="myuste-panel-row"><strong>Cumulative GWA:</strong> <span>${cumulativeText}</span></div>
         <div class="myuste-panel-row"><strong>Source:</strong> <span class="myuste-source-badge ${data.source === 'Portal Semestral Ave' ? 'source-official' : 'source-fallback'}">${data.source}</span></div>
-        <div class="myuste-panel-row"><strong>Current term status:</strong> <span class="myuste-tier-badge theme-${tier.theme}">${tier.label}</span></div>
-        <div class="myuste-panel-row"><strong>Highest tier you can maintain now:</strong> <span class="myuste-highlight">${maintainableText}</span></div>
-        <div class="myuste-panel-row"><strong>What you need for a higher tier:</strong> <span>${projection.guidance}</span></div>
-        <div class="myuste-panel-row"><strong>Total Units:</strong> <span>${data.totalUnits || 'N/A'}</span></div>
+        <div class="myuste-panel-row"><strong>Current standing:</strong> <span class="myuste-tier-badge theme-${cumulativeTier.theme}">${cumulativeTier.label}</span></div>
+        <div class="myuste-panel-row"><strong>Estimated semesters left:</strong> <span>${progress.remainingTerms}</span></div>
+        <div class="myuste-panel-row"><strong>Next tier target:</strong> <span>${targetText}</span></div>
+        <div class="myuste-panel-row"><strong>Guidance:</strong> <span>${plan.guidance}</span></div>
         <button id="myuste-save-term-btn" class="myuste-btn ${sameSnapshot ? 'is-disabled' : ''}" ${sameSnapshot ? 'disabled' : ''}>${sameSnapshot ? 'Term already saved' : 'Save this term'}</button>
-        <div class="myuste-panel-note">${sourceDetail} Projection uses your saved terms plus this visible term. Future-grade guidance assumes your next term has ${futureUnits} unit(s). Change that in the popup if needed.</div>
+        <div class="myuste-panel-note">${sourceDetail} Remaining semesters are estimated using a standard 8-term program, and the target grade is averaged across those remaining terms.</div>
       </div>
     `;
 
@@ -472,6 +513,7 @@
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         setDismissed(true);
+        setFullyHidden(false);
         renderPanel(data);
       });
     }
@@ -503,9 +545,19 @@
   });
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && (changes.savedTerms || changes.plannerFutureUnits)) {
+    if (areaName === 'local' && changes.savedTerms) {
       scheduleRun();
     }
+  });
+
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (!message || message.type !== 'MYUSTE_OPEN_TRACKER') return;
+
+    setFullyHidden(false);
+    setDismissed(false);
+    scheduleRun();
+    sendResponse({ ok: true });
+    return true;
   });
 
   if (document.readyState === 'loading') {

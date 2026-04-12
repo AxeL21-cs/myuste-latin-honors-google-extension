@@ -205,3 +205,27 @@
 .myuste-panel-title {
   cursor: move;
 }
+
+
+.myuste-reopen-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.myuste-mini-close-btn {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #7a3d00;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+
+.myuste-mini-close-btn:hover {
+  filter: brightness(0.96);
+}

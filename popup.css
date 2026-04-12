@@ -95,3 +95,17 @@ button {
   color: #9c7400;
   font-weight: 700;
 }
+
+.popup-actions {
+  margin-top: 10px;
+}
+
+.secondary-action {
+  background: #fff6d8;
+  border: 1px solid #e7c75b;
+  color: #6b4a00;
+}
+
+.secondary-action:hover {
+  background: #ffefb3;
+}
