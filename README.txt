@@ -3,7 +3,7 @@ myUSTe Latin Honors Tracker - Chrome Extension
 How it works:
 1. Open the myUSTe Grades page.
 2. The extension detects the grades table.
-3. It computes GWA using Finals x (Lec Units + Lab Units).
+3. Gets GWA of the sem depending on the final ave at the bottom of the table. 
 4. It labels the current status as Summa, Magna, Cum Laude, or not on track.
 5. Click "Save this term" on the page to build a cumulative estimate across terms.
 
