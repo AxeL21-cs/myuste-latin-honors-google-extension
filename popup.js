@@ -151,11 +151,18 @@ async function openTrackerOnActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.id) return;
 
+  const isMyUSTe = /^https:\/\/student\.ust\.edu\.ph\/myuste\/myGrades\.jsp/i.test(tab.url || '');
+  if (!isMyUSTe) {
+    const latestBox = document.getElementById('latest');
+    latestBox.insertAdjacentHTML('beforeend', '<div class="small bad">Open the myUSTe grades page first.</div>');
+    return;
+  }
+
   try {
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'MYUSTE_OPEN_TRACKER' });
     if (!response || !response.ok) {
       const latestBox = document.getElementById('latest');
-      latestBox.insertAdjacentHTML('beforeend', '<div class="small bad">Could not reopen the tracker on this page. Open the myUSTe grades page first.</div>');
+      latestBox.insertAdjacentHTML('beforeend', '<div class="small bad">Could not reopen the tracker on this page. Refresh the myUSTe grades tab and try again.</div>');
     }
   } catch (error) {
     const latestBox = document.getElementById('latest');

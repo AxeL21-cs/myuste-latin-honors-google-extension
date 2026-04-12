@@ -9,6 +9,32 @@
 
   const DISMISSED_KEY = 'myusteTrackerDismissed';
   const HIDDEN_KEY = 'myusteTrackerFullyHidden';
+  const ALLOWED_HOSTS = ['student.ust.edu.ph'];
+
+    function isAllowedHost() {
+      return ALLOWED_HOSTS.includes(window.location.hostname);
+    }
+
+    function isGradesPage() {
+      const url = normalizeText(window.location.href).toLowerCase();
+      const bodyText = normalizeText(document.body ? document.body.innerText : '').toLowerCase();
+
+      return (
+        url.includes('/myuste/mygrades.jsp') ||
+        bodyText.includes('semestral ave') ||
+        bodyText.includes('academic year and term')
+      );
+    }
+
+    function shouldRenderTracker() {
+      return isAllowedHost() && isGradesPage();
+    }
+
+    function clearPanel() {
+      const panel = document.getElementById(PANEL_ID);
+      if (panel) panel.innerHTML = '';
+    }
+
 
   function isDismissed() {
     return sessionStorage.getItem(DISMISSED_KEY) === '1';
@@ -519,18 +545,25 @@
     }
   }
 
-  async function run() {
-    const data = collectPageData();
-    const pageLooksRelevant = data.term !== 'Unknown Term' || Number.isFinite(data.portalGwa) || data.subjects.length > 0;
-
-    if (!pageLooksRelevant || !Number.isFinite(data.gwa)) {
-      chrome.storage.local.set({ latestTermCalculation: null });
-      return;
-    }
-
-    await renderPanel(data);
-    chrome.storage.local.set({ latestTermCalculation: data });
+async function run() {
+  if (!shouldRenderTracker()) {
+    clearPanel();
+    chrome.storage.local.set({ latestTermCalculation: null });
+    return;
   }
+
+  const data = collectPageData();
+  const pageLooksRelevant = data.term !== 'Unknown Term' || Number.isFinite(data.portalGwa) || data.subjects.length > 0;
+
+  if (!pageLooksRelevant || !Number.isFinite(data.gwa)) {
+    clearPanel();
+    chrome.storage.local.set({ latestTermCalculation: null });
+    return;
+  }
+
+  await renderPanel(data);
+  chrome.storage.local.set({ latestTermCalculation: data });
+}
 
   let runTimer = null;
   const scheduleRun = () => {
