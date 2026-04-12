@@ -9,32 +9,6 @@
 
   const DISMISSED_KEY = 'myusteTrackerDismissed';
   const HIDDEN_KEY = 'myusteTrackerFullyHidden';
-  const ALLOWED_HOSTS = ['student.ust.edu.ph'];
-
-    function isAllowedHost() {
-      return ALLOWED_HOSTS.includes(window.location.hostname);
-    }
-
-    function isGradesPage() {
-      const url = normalizeText(window.location.href).toLowerCase();
-      const bodyText = normalizeText(document.body ? document.body.innerText : '').toLowerCase();
-
-      return (
-        url.includes('/myuste/mygrades.jsp') ||
-        bodyText.includes('semestral ave') ||
-        bodyText.includes('academic year and term')
-      );
-    }
-
-    function shouldRenderTracker() {
-      return isAllowedHost() && isGradesPage();
-    }
-
-    function clearPanel() {
-      const panel = document.getElementById(PANEL_ID);
-      if (panel) panel.innerHTML = '';
-    }
-
 
   function isDismissed() {
     return sessionStorage.getItem(DISMISSED_KEY) === '1';
@@ -293,7 +267,7 @@
         nextTier,
         targetGrade: NaN,
         isPossible: false,
-        guidance: `There are no remaining semesters in the 8-term estimate, so ${nextTier.label} can no longer be reached through future terms alone.`
+        guidance: `You’ve reached the end of the estimated semesters for this tracker 🌼 ${nextTier.label} may no longer be within reach, but finishing strong is still something to be proud of.`
       };
     }
 
@@ -305,7 +279,7 @@
         nextTier,
         targetGrade: 1.0,
         isPossible: false,
-        guidance: `Even getting 1.000 in each of the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} would still not be enough to reach ${nextTier.label}. Focus on finishing as strongly as you can 💛`
+        guidance: `Nice try 🌷 Even perfect remaining terms may not be enough for ${nextTier.label}, but you can still finish beautifully and be proud of how far you’ve come 💛`
       };
     }
 
@@ -501,7 +475,7 @@
     const targetText = plan.nextTier
       ? (plan.isPossible
         ? `${plan.targetGrade.toFixed(3)} or better per remaining semester`
-        : `${plan.nextTier.label} is no longer reachable in the remaining estimated semesters`)
+        : `Nice try 🌷 ${plan.nextTier.label} may no longer be within reach, but finishing strong still matters`)
       : 'Maintain 1.200 or better to protect Summa range';
 
     panel.innerHTML = `
@@ -545,25 +519,18 @@
     }
   }
 
-async function run() {
-  if (!shouldRenderTracker()) {
-    clearPanel();
-    chrome.storage.local.set({ latestTermCalculation: null });
-    return;
+  async function run() {
+    const data = collectPageData();
+    const pageLooksRelevant = data.term !== 'Unknown Term' || Number.isFinite(data.portalGwa) || data.subjects.length > 0;
+
+    if (!pageLooksRelevant || !Number.isFinite(data.gwa)) {
+      chrome.storage.local.set({ latestTermCalculation: null });
+      return;
+    }
+
+    await renderPanel(data);
+    chrome.storage.local.set({ latestTermCalculation: data });
   }
-
-  const data = collectPageData();
-  const pageLooksRelevant = data.term !== 'Unknown Term' || Number.isFinite(data.portalGwa) || data.subjects.length > 0;
-
-  if (!pageLooksRelevant || !Number.isFinite(data.gwa)) {
-    clearPanel();
-    chrome.storage.local.set({ latestTermCalculation: null });
-    return;
-  }
-
-  await renderPanel(data);
-  chrome.storage.local.set({ latestTermCalculation: data });
-}
 
   let runTimer = null;
   const scheduleRun = () => {

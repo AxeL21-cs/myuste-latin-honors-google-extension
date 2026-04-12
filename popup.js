@@ -88,13 +88,13 @@ function getTargetPlan(cumulativeGwa, completedTerms, remainingTerms) {
   }
   if (remainingTerms <= 0) {
     return {
-      line: `${nextTier.label} is no longer reachable in the remaining estimated semesters.`
+      line: `You’ve reached the end of the estimated semesters for this tracker 🌼 ${nextTier.label} may no longer be within reach, but a strong finish is still worth being proud of.`
     };
   }
   const required = ((nextTier.max * TOTAL_TERMS) - (cumulativeGwa * completedTerms)) / remainingTerms;
   if (required < 1.0) {
     return {
-      line: `Even perfect 1.000s in the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} would not be enough for ${nextTier.label}.`
+      line: `Nice try 🌷 Even perfect remaining terms may not be enough for ${nextTier.label}, but you can still finish strong and be proud of your progress.`
     };
   }
   return {
@@ -151,18 +151,11 @@ async function openTrackerOnActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.id) return;
 
-  const isMyUSTe = /^https:\/\/student\.ust\.edu\.ph\/myuste\/myGrades\.jsp/i.test(tab.url || '');
-  if (!isMyUSTe) {
-    const latestBox = document.getElementById('latest');
-    latestBox.insertAdjacentHTML('beforeend', '<div class="small bad">Open the myUSTe grades page first.</div>');
-    return;
-  }
-
   try {
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'MYUSTE_OPEN_TRACKER' });
     if (!response || !response.ok) {
       const latestBox = document.getElementById('latest');
-      latestBox.insertAdjacentHTML('beforeend', '<div class="small bad">Could not reopen the tracker on this page. Refresh the myUSTe grades tab and try again.</div>');
+      latestBox.insertAdjacentHTML('beforeend', '<div class="small bad">Could not reopen the tracker on this page. Open the myUSTe grades page first.</div>');
     }
   } catch (error) {
     const latestBox = document.getElementById('latest');
