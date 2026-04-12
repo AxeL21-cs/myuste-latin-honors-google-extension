@@ -6,19 +6,19 @@ const HONORS = [
 const TOTAL_TERMS = 8;
 
 function getHonorTier(gwa) {
-  if (!Number.isFinite(gwa)) return { label: 'Unavailable', className: '' };
+  if (!Number.isFinite(gwa) || gwa <= 0) return { label: 'Not yet eligible for Latin honors', className: 'bad', key: 'none' };
   for (const honor of HONORS) {
     if (gwa >= honor.min && gwa <= honor.max) return honor;
   }
   return { label: 'Not yet eligible for Latin honors', className: 'bad', key: 'none' };
 }
 
-function getNextBetterTier(gwa) {
-  if (!Number.isFinite(gwa)) return null;
-  if (gwa > 1.75) return HONORS[2];
-  if (gwa > 1.45) return HONORS[1];
-  if (gwa > 1.2) return HONORS[0];
-  return null;
+function getHigherTiers(cumulativeGwa) {
+  const currentTier = getHonorTier(cumulativeGwa);
+  if (currentTier.key === 'summa') return [];
+  if (currentTier.key === 'magna') return [HONORS[0]];
+  if (currentTier.key === 'cum') return [HONORS[1], HONORS[0]];
+  return [HONORS[2], HONORS[1], HONORS[0]];
 }
 
 function escapeHtml(text) {
@@ -78,28 +78,33 @@ function mergeTerms(savedTerms, latest) {
   return Array.from(map.values());
 }
 
-function getTargetPlan(cumulativeGwa, completedTerms, remainingTerms) {
-  const nextTier = getNextBetterTier(cumulativeGwa);
-  if (!Number.isFinite(cumulativeGwa) || completedTerms <= 0) return null;
-  if (!nextTier) {
+function getTargetPlans(cumulativeGwa, completedTerms, remainingTerms) {
+  const tiers = getHigherTiers(cumulativeGwa);
+  if (!Number.isFinite(cumulativeGwa) || completedTerms <= 0) return [];
+  if (!tiers.length) return [];
+
+  return tiers.map(tier => {
+    if (remainingTerms <= 0) {
+      return {
+        label: tier.label,
+        line: `Nice try 🌷 ${tier.label} may no longer be within reach, but finishing strong still matters.`
+      };
+    }
+
+    const required = ((tier.max * TOTAL_TERMS) - (cumulativeGwa * completedTerms)) / remainingTerms;
+
+    if (required < 1.0) {
+      return {
+        label: tier.label,
+        line: `Nice try 🌷 Even perfect 1.000s in the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} may not be enough for ${tier.label}, but you can still finish strong and be proud of your progress.`
+      };
+    }
+
     return {
-      line: 'Already in Summa range. Try to keep each remaining term at 1.200 or better ✨'
+      label: tier.label,
+      line: `${tier.label}: aim for about ${required.toFixed(3)} or better in each of the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} 🌱`
     };
-  }
-  if (remainingTerms <= 0) {
-    return {
-      line: `You’ve reached the end of the estimated semesters for this tracker 🌼 ${nextTier.label} may no longer be within reach, but a strong finish is still worth being proud of.`
-    };
-  }
-  const required = ((nextTier.max * TOTAL_TERMS) - (cumulativeGwa * completedTerms)) / remainingTerms;
-  if (required < 1.0) {
-    return {
-      line: `Nice try 🌷 Even perfect remaining terms may not be enough for ${nextTier.label}, but you can still finish strong and be proud of your progress.`
-    };
-  }
-  return {
-    line: `To reach ${nextTier.label}, aim for about ${required.toFixed(3)} or better in each of the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} 🌱`
-  };
+  });
 }
 
 async function load() {
@@ -131,12 +136,14 @@ async function load() {
       const gwa = numericGwas.reduce((sum, value) => sum + value, 0) / numericGwas.length;
       const tier = getHonorTier(gwa);
       const remainingTerms = Math.max(TOTAL_TERMS - mergedTerms.length, 0);
-      const plan = getTargetPlan(gwa, mergedTerms.length, remainingTerms);
+      const plans = getTargetPlans(gwa, mergedTerms.length, remainingTerms);
       cumulativeBox.innerHTML = `
         <div>Estimated cumulative GWA: <strong>${gwa.toFixed(3)}</strong></div>
         <div class="${tier.className}">${tier.label}</div>
         <div class="small">Estimated semesters left: ${remainingTerms}</div>
-        ${plan ? `<div class="small">${escapeHtml(plan.line)}</div>` : ''}
+        ${plans.length
+          ? plans.map(plan => `<div class="small">${escapeHtml(plan.line)}</div>`).join('')
+          : `<div class="small">Already in Summa range. Maintain your standing ✨</div>`}
         <div class="small">Based only on terms you saved in this extension and a standard 8-term program.</div>
       `;
     } else {
