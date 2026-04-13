@@ -6,19 +6,58 @@ const HONORS = [
 const TOTAL_TERMS = 8;
 
 function getHonorTier(gwa) {
-  if (!Number.isFinite(gwa) || gwa <= 0) return { label: 'Not yet eligible for Latin honors', className: 'bad', key: 'none' };
+  if (!Number.isFinite(gwa) || gwa <= 0) return { label: 'Unavailable', className: '' };
   for (const honor of HONORS) {
     if (gwa >= honor.min && gwa <= honor.max) return honor;
   }
   return { label: 'Not yet eligible for Latin honors', className: 'bad', key: 'none' };
 }
 
+function isUnencodedGrade(gwa) {
+  return Number.isFinite(gwa) && gwa <= 0;
+}
+
 function getHigherTiers(cumulativeGwa) {
+  if (!Number.isFinite(cumulativeGwa) || cumulativeGwa <= 0) {
+    return [HONORS[2], HONORS[1], HONORS[0]];
+  }
+
   const currentTier = getHonorTier(cumulativeGwa);
+
   if (currentTier.key === 'summa') return [];
   if (currentTier.key === 'magna') return [HONORS[0]];
   if (currentTier.key === 'cum') return [HONORS[1], HONORS[0]];
   return [HONORS[2], HONORS[1], HONORS[0]];
+}
+
+function getTargetPlans(cumulativeGwa, completedTerms, remainingTerms) {
+  const tiers = getHigherTiers(cumulativeGwa);
+
+  if (!Number.isFinite(cumulativeGwa) || completedTerms <= 0 || cumulativeGwa <= 0) return [];
+  if (!tiers.length) return [];
+
+  return tiers.map(tier => {
+    if (remainingTerms <= 0) {
+      return {
+        label: tier.label,
+        line: `Nice try 🌷 ${tier.label} may no longer be within reach, but finishing strong is still something to be proud of.`
+      };
+    }
+
+    const required = ((tier.max * TOTAL_TERMS) - (cumulativeGwa * completedTerms)) / remainingTerms;
+
+    if (required < 1.0) {
+      return {
+        label: tier.label,
+        line: `Nice try 🌷 Even perfect remaining terms may not be enough for ${tier.label}, but you can still finish strong and be proud of your progress.`
+      };
+    }
+
+    return {
+      label: tier.label,
+      line: `${tier.label}: aim for about ${required.toFixed(3)} or better in each of the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} 🌱`
+    };
+  });
 }
 
 function escapeHtml(text) {
@@ -67,44 +106,23 @@ function renderSavedTermsTable(savedTerms) {
 
 function mergeTerms(savedTerms, latest) {
   const map = new Map();
+
   for (const term of savedTerms) {
-    if (term && term.term && Number.isFinite(Number(term.gwa))) {
-      map.set(term.term, { ...term, gwa: Number(term.gwa) });
+    const gwa = Number(term?.gwa);
+    if (term && term.term && Number.isFinite(gwa) && gwa > 0) {
+      map.set(term.term, { ...term, gwa });
     }
   }
-  if (latest && latest.term && Number.isFinite(latest.gwa)) {
-    map.set(latest.term, { term: latest.term, gwa: Number(latest.gwa), source: latest.source || 'Unknown' });
+
+  if (latest && latest.term && Number.isFinite(latest.gwa) && latest.gwa > 0) {
+    map.set(latest.term, {
+      term: latest.term,
+      gwa: Number(latest.gwa),
+      source: latest.source || 'Unknown'
+    });
   }
+
   return Array.from(map.values());
-}
-
-function getTargetPlans(cumulativeGwa, completedTerms, remainingTerms) {
-  const tiers = getHigherTiers(cumulativeGwa);
-  if (!Number.isFinite(cumulativeGwa) || completedTerms <= 0) return [];
-  if (!tiers.length) return [];
-
-  return tiers.map(tier => {
-    if (remainingTerms <= 0) {
-      return {
-        label: tier.label,
-        line: `Nice try 🌷 ${tier.label} may no longer be within reach, but finishing strong still matters.`
-      };
-    }
-
-    const required = ((tier.max * TOTAL_TERMS) - (cumulativeGwa * completedTerms)) / remainingTerms;
-
-    if (required < 1.0) {
-      return {
-        label: tier.label,
-        line: `Nice try 🌷 Even perfect 1.000s in the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} may not be enough for ${tier.label}, but you can still finish strong and be proud of your progress.`
-      };
-    }
-
-    return {
-      label: tier.label,
-      line: `${tier.label}: aim for about ${required.toFixed(3)} or better in each of the remaining ${remainingTerms} semester${remainingTerms === 1 ? '' : 's'} 🌱`
-    };
-  });
 }
 
 async function load() {
@@ -114,13 +132,23 @@ async function load() {
 
   const latestBox = document.getElementById('latest');
   if (latest && Number.isFinite(latest.gwa)) {
-    const tier = getHonorTier(latest.gwa);
-    latestBox.innerHTML = `
-      <div><strong>${escapeHtml(latest.term)}</strong></div>
-      <div>GWA: ${latest.gwa.toFixed(3)}</div>
-      <div>Source: ${escapeHtml(latest.source || 'Unknown')}</div>
-      <div class="${tier.className}">${tier.label}</div>
-    `;
+    if (isUnencodedGrade(latest.gwa)) {
+      latestBox.innerHTML = `
+        <div><strong>${escapeHtml(latest.term)}</strong></div>
+        <div>GWA: ${latest.gwa.toFixed(3)}</div>
+        <div>Source: ${escapeHtml(latest.source || 'Unknown')}</div>
+        <div class="warn">Grades not yet available</div>
+        <div class="small">A 0.000 semestral average may mean the grades have not been encoded yet.</div>
+      `;
+    } else {
+      const tier = getHonorTier(latest.gwa);
+      latestBox.innerHTML = `
+        <div><strong>${escapeHtml(latest.term)}</strong></div>
+        <div>GWA: ${latest.gwa.toFixed(3)}</div>
+        <div>Source: ${escapeHtml(latest.source || 'Unknown')}</div>
+        <div class="${tier.className}">${tier.label}</div>
+      `;
+    }
   } else {
     latestBox.innerHTML = 'Open the myUSTe Grades page to load data.';
   }
@@ -129,14 +157,24 @@ async function load() {
 
   const cumulativeBox = document.getElementById('cumulative');
   const mergedTerms = mergeTerms(savedTerms, latest);
+
+  if (latest && isUnencodedGrade(latest.gwa) && !mergedTerms.length) {
+    cumulativeBox.innerHTML = `
+      <div class="warn">Grades not yet available</div>
+      <div class="small">This term is not being included in cumulative standing yet because 0.000 likely means the grades have not been encoded.</div>
+    `;
+    return;
+  }
+
   if (mergedTerms.length) {
-    const numericGwas = mergedTerms.map(t => Number(t.gwa)).filter(Number.isFinite);
+    const numericGwas = mergedTerms.map(t => Number(t.gwa)).filter(gwa => Number.isFinite(gwa) && gwa > 0);
 
     if (numericGwas.length) {
       const gwa = numericGwas.reduce((sum, value) => sum + value, 0) / numericGwas.length;
       const tier = getHonorTier(gwa);
       const remainingTerms = Math.max(TOTAL_TERMS - mergedTerms.length, 0);
       const plans = getTargetPlans(gwa, mergedTerms.length, remainingTerms);
+
       cumulativeBox.innerHTML = `
         <div>Estimated cumulative GWA: <strong>${gwa.toFixed(3)}</strong></div>
         <div class="${tier.className}">${tier.label}</div>

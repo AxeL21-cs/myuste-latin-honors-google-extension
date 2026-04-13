@@ -1,5 +1,6 @@
 myUSTe Latin Honors Tracker - Chrome Extension
 
+Made by: yours truely :D
 How it works:
 1. Open the myUSTe Grades page.
 2. The extension detects the grades table.
@@ -7,7 +8,7 @@ How it works:
 4. It labels the current status as Summa, Magna, Cum Laude, or not on track.
 5. Click "Save this term" on the page to build a cumulative estimate across terms.
 
-UST Latin honors thresholds used:
+UST Latin honors thresholds used (based this off the student handbook):
 - 1.000 - 1.200 Summa Cum Laude
 - 1.201 - 1.450 Magna Cum Laude
 - 1.451 - 1.750 Cum Laude

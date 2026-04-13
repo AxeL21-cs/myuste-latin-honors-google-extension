@@ -229,3 +229,13 @@
 .myuste-mini-close-btn:hover {
   filter: brightness(0.96);
 }
+
+.myuste-panel-card.theme-neutral {
+  border-color: #bdbdbd;
+}
+
+.myuste-status-box.theme-neutral {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #4b5563;
+}
